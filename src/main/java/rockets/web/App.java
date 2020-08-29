@@ -105,7 +105,7 @@ public class App {
 
     }
 
-    private static void handleGetIndex() {
+    private static void  handleGetIndex() {
         get("/", (req, res) -> {
             Map<String, Object> attributes = new HashMap<>();
             User user = getLoggedInUser(req);
@@ -276,16 +276,49 @@ public class App {
 
     // TODO: Need to TDD this
     private static void handlePostCreateRocket() {
+        post("/rocket/create", (req, res) -> {
+            LaunchServiceProvider manufacturer;
+            Map<String, Object> attributes = new HashMap<>();
+            String rocketName = req.queryParams("rocketName");
+            String variation = req.queryParams("variation");
+            String country = req.queryParams("country");
+
+            String manuname = req.queryParams("manuname");
+            int yearFounded = req.port();
+            String manucountry = req.queryParams("manucountry");
+
+            attributes.put("rocketName", rocketName);
+            attributes.put("variation", variation);
+            attributes.put("country", country);
+
+            attributes.put("manuname", manuname);
+            attributes.put("yearFounded", yearFounded);
+            attributes.put("manucountry", manucountry);
+
+            logger.info("Create <" + rocketName + ">, " + country);
+
+            Rocket rocket;
+            try {
+                manufacturer = new LaunchServiceProvider(manuname, yearFounded, manucountry);
+                rocket = new Rocket(rocketName, variation, country, manufacturer);
+                dao.createOrUpdate(rocket);
+                res.status(301);
+                req.session(true);
+                req.session().attribute("rocketName", rocketName);
+                res.redirect("/hello");
+                return new ModelAndView(attributes, "rockets.html.ftl");
+            } catch (Exception e) {
+                return handleException(res, attributes, e, "create_rocket.html.ftl");
+            }
+        }, new FreeMarkerEngine());
     }
 
     private static void handleGetCreateRocket() {
         get("/rocket/create", (req, res) -> {
             Map<String, Object> attributes = new HashMap<>();
             attributes.put("missionName", "");
-            attributes.put("time", "");
             attributes.put("location", "");
             attributes.put("description", "");
-
             return new ModelAndView(attributes, "create_rocket.html.ftl");
         }, new FreeMarkerEngine());
     }
